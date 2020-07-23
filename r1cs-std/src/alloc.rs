@@ -140,3 +140,61 @@ impl<I, ConstraintF: Field, A: AllocGadget<I, ConstraintF>> AllocGadget<[I], Con
         Ok(vec)
     }
 }
+
+impl<I, ConstraintF: Field, A: AllocGadget<I, ConstraintF> + Default + Copy> AllocGadget<[I; 32], ConstraintF>
+for [A; 32]
+{
+    #[inline]
+    fn alloc_constant<T, CS: ConstraintSystem<ConstraintF>>(
+        mut cs: CS,
+        t: T,
+    ) -> Result<Self, SynthesisError>
+        where
+            T: Borrow<[I; 32]>,
+    {
+        let mut arr = <[A; 32]>::default();
+        arr.copy_from_slice(
+            &t.borrow().iter().enumerate().map(|(i, v)| {
+                A::alloc_constant(cs.ns(|| format!("value_{}", i)), v)
+            })
+                .collect::<Result<Vec<A>, SynthesisError>>()?[..32]
+        );
+        Ok(arr)
+    }
+
+    fn alloc<F, T, CS: ConstraintSystem<ConstraintF>>(
+        mut cs: CS,
+        f: F,
+    ) -> Result<Self, SynthesisError>
+        where
+            F: FnOnce() -> Result<T, SynthesisError>,
+            T: Borrow<[I; 32]>,
+    {
+        let mut arr = <[A; 32]>::default();
+        arr.copy_from_slice(
+            &f()?.borrow().iter().enumerate().map(|(i, v)| {
+                A::alloc(cs.ns(|| format!("value_{}", i)), || Ok(v) )
+            })
+                .collect::<Result<Vec<A>, SynthesisError>>()?[..32]
+        );
+        Ok(arr)
+    }
+
+    fn alloc_input<F, T, CS: ConstraintSystem<ConstraintF>>(
+        mut cs: CS,
+        f: F,
+    ) -> Result<Self, SynthesisError>
+        where
+            F: FnOnce() -> Result<T, SynthesisError>,
+            T: Borrow<[I; 32]>,
+    {
+        let mut arr = <[A; 32]>::default();
+        arr.copy_from_slice(
+            &f()?.borrow().iter().enumerate().map(|(i, v)| {
+                A::alloc_input(cs.ns(|| format!("value_{}", i)), || Ok(v) )
+            })
+                .collect::<Result<Vec<A>, SynthesisError>>()?[..32]
+        );
+        Ok(arr)
+    }
+}
