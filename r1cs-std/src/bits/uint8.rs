@@ -211,6 +211,28 @@ impl<ConstraintF: Field> ConditionalEqGadget<ConstraintF> for UInt8 {
     }
 }
 
+
+impl<ConstraintF: PrimeField> CondSelectGadget<ConstraintF> for UInt8 {
+    fn conditionally_select<CS: ConstraintSystem<ConstraintF>>(mut cs: CS, cond: &Boolean, true_value: &Self, false_value: &Self) -> Result<Self, SynthesisError> {
+        let selected_bits = true_value.bits.iter().zip(&false_value.bits).enumerate()
+            .map(|(i, (tb, fb))| Boolean::conditionally_select(&mut cs.ns(|| format!("cond_select_uint8_bit_{}", i)), cond, tb, fb))
+            .collect::<Result<Vec<Boolean>, SynthesisError>>()?;
+
+        let new_value = match (cond.get_value(), true_value.get_value(), false_value.get_value()) {
+            (Some(true), None, _) => None,
+            (Some(true), Some(v), _) => Some(v),
+            (Some(false), _, None) => None,
+            (Some(false), _, Some(v)) => Some(v),
+            (None, _, _) => None,
+        };
+        Ok( Self { bits: selected_bits, value: new_value } )
+    }
+
+    fn cost() -> usize {
+        8 * <Boolean as CondSelectGadget<ConstraintF>>::cost()
+    }
+}
+
 impl<ConstraintF: Field> EqGadget<ConstraintF> for UInt8 {}
 
 impl<ConstraintF: Field> AllocGadget<u8, ConstraintF> for UInt8 {
@@ -303,6 +325,7 @@ impl<ConstraintF: Field> AllocGadget<u8, ConstraintF> for UInt8 {
         })
     }
 }
+
 
 impl Default for UInt8 {
     fn default() -> Self {
