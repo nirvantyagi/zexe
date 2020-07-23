@@ -141,7 +141,7 @@ impl<I, ConstraintF: Field, A: AllocGadget<I, ConstraintF>> AllocGadget<[I], Con
     }
 }
 
-impl<I, ConstraintF: Field, A: AllocGadget<I, ConstraintF> + Default + Copy> AllocGadget<[I; 32], ConstraintF>
+impl<I, ConstraintF: Field, A: AllocGadget<I, ConstraintF> + Default + Clone> AllocGadget<[I; 32], ConstraintF>
 for [A; 32]
 {
     #[inline]
@@ -153,7 +153,7 @@ for [A; 32]
             T: Borrow<[I; 32]>,
     {
         let mut arr = <[A; 32]>::default();
-        arr.copy_from_slice(
+        arr.clone_from_slice(
             &t.borrow().iter().enumerate().map(|(i, v)| {
                 A::alloc_constant(cs.ns(|| format!("value_{}", i)), v)
             })
@@ -171,7 +171,7 @@ for [A; 32]
             T: Borrow<[I; 32]>,
     {
         let mut arr = <[A; 32]>::default();
-        arr.copy_from_slice(
+        arr.clone_from_slice(
             &f()?.borrow().iter().enumerate().map(|(i, v)| {
                 A::alloc(cs.ns(|| format!("value_{}", i)), || Ok(v) )
             })
@@ -189,7 +189,7 @@ for [A; 32]
             T: Borrow<[I; 32]>,
     {
         let mut arr = <[A; 32]>::default();
-        arr.copy_from_slice(
+        arr.clone_from_slice(
             &f()?.borrow().iter().enumerate().map(|(i, v)| {
                 A::alloc_input(cs.ns(|| format!("value_{}", i)), || Ok(v) )
             })

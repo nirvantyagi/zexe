@@ -304,6 +304,12 @@ impl<ConstraintF: Field> AllocGadget<u8, ConstraintF> for UInt8 {
     }
 }
 
+impl Default for UInt8 {
+    fn default() -> Self {
+        UInt8::constant(Default::default())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::UInt8;
@@ -409,69 +415,5 @@ mod test {
                 expected >>= 1;
             }
         }
-    }
-}
-
-impl Default for UInt8 {
-    fn default() -> Self {
-        UInt8::constant(Default::default())
-    }
-}
-
-impl<ConstraintF: Field> AllocGadget<[u8; 32], ConstraintF>
-for [UInt8; 32]
-{
-    #[inline]
-    fn alloc_constant<T, CS: ConstraintSystem<ConstraintF>>(
-        mut cs: CS,
-        t: T,
-    ) -> Result<Self, SynthesisError>
-        where
-            T: Borrow<[u8; 32]>,
-    {
-        let mut arr = <[UInt8; 32]>::default();
-        arr.clone_from_slice(
-            &t.borrow().iter().enumerate().map(|(i, v)| {
-                UInt8::alloc_constant(cs.ns(|| format!("value_{}", i)), v)
-            })
-                .collect::<Result<Vec<UInt8>, SynthesisError>>()?[..32]
-        );
-        Ok(arr)
-    }
-
-    fn alloc<F, T, CS: ConstraintSystem<ConstraintF>>(
-        mut cs: CS,
-        f: F,
-    ) -> Result<Self, SynthesisError>
-        where
-            F: FnOnce() -> Result<T, SynthesisError>,
-            T: Borrow<[u8; 32]>,
-    {
-        let mut arr = <[UInt8; 32]>::default();
-        arr.clone_from_slice(
-            &f()?.borrow().iter().enumerate().map(|(i, v)| {
-                UInt8::alloc(cs.ns(|| format!("value_{}", i)), || Ok(v) )
-            })
-                .collect::<Result<Vec<UInt8>, SynthesisError>>()?[..32]
-        );
-        Ok(arr)
-    }
-
-    fn alloc_input<F, T, CS: ConstraintSystem<ConstraintF>>(
-        mut cs: CS,
-        f: F,
-    ) -> Result<Self, SynthesisError>
-        where
-            F: FnOnce() -> Result<T, SynthesisError>,
-            T: Borrow<[u8; 32]>,
-    {
-        let mut arr = <[UInt8; 32]>::default();
-        arr.clone_from_slice(
-            &f()?.borrow().iter().enumerate().map(|(i, v)| {
-                UInt8::alloc_input(cs.ns(|| format!("value_{}", i)), || Ok(v) )
-            })
-                .collect::<Result<Vec<UInt8>, SynthesisError>>()?[..32]
-        );
-        Ok(arr)
     }
 }
